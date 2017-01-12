@@ -19,6 +19,9 @@ public class GameJPanel extends javax.swing.JPanel {
 
     public void toggleGameOn() {
         this.gameOn = !this.gameOn;
+        synchronized (this) {
+            this.notify();
+        }
     }
 
     /**

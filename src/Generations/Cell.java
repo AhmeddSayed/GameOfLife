@@ -21,7 +21,7 @@ public class Cell extends JPanel {
         this.setName(cellname);
 
         if (isAlive) {
-            this.setBackground(Color.GREEN);
+            this.setBackground(Color.YELLOW);
         } else {
             this.setBackground(Color.BLACK);
         }
@@ -41,5 +41,13 @@ public class Cell extends JPanel {
     public void revive() {
         this.isAlive = true;
         this.setBackground(Color.YELLOW);
+    }
+
+    void toggle() {
+        if (this.isAlive) {
+            this.die();
+        } else {
+            this.revive();
+        }
     }
 }

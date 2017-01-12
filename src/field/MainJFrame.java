@@ -44,10 +44,10 @@ public class MainJFrame extends javax.swing.JFrame {
         }
         
         // calling cellObserver
-        CellObserver cellObserver = new CellObserver(cells);
+        CellObserver cellObserver = new CellObserver(cells, gamePanel);
         ExecutorService es = Executors.newFixedThreadPool(2);
         es.execute(cellObserver);
-        gamePanel.setVisible(true);
+        gamePanel.setVisible(gamePanel.isGameOn());
         setVisible(true);
     }
 
