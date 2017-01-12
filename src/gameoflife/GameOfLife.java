@@ -19,7 +19,7 @@ public class GameOfLife {
     public static void main(String[] args) {
         // TODO code application logic here
         MainJFrame gameFrame = new MainJFrame();
-        gameFrame.setSize(800, 600);
+        gameFrame.setSize(800, 800);
         gameFrame.setLocationRelativeTo(null);
     }
     
