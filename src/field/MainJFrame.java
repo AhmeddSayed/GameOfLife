@@ -8,6 +8,8 @@ package field;
 import Generations.Cell;
 import Generations.CellObserver;
 import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
@@ -23,7 +25,9 @@ public class MainJFrame extends javax.swing.JFrame {
     /**
      * Creates new form mainJFrame
      */
-    private volatile Cell[][] cells = new Cell[10][10];
+    private volatile Cell[][] cells = new Cell[50][50];
+    private CellObserver cellObserver;
+    ExecutorService es = Executors.newFixedThreadPool(2);
 
     public MainJFrame() {
         init();
@@ -31,23 +35,14 @@ public class MainJFrame extends javax.swing.JFrame {
 
     private void init() {
         initComponents();
+        this.setTitle("GameOfLife");
+        gamePanel.setLayout(new GridLayout(50, 50, 1, 1));
+        generateCells();
 
-        gamePanel.setLayout(new GridLayout(10, 10, 2, 2));
-        Random random = new Random();
-        // generating cells with randomized states
-        for (int i = 0; i < cells.length; i++) {
-            for (int j = 0; j < cells.length; j++) {
-                cells[i][j] = new Cell(random.nextBoolean(), "Cell" + i + "-" + j);
-                cells[i][j].setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY, 2));
-                gamePanel.add(cells[i][j], i, j);
-            }
-        }
-        
         // calling cellObserver
-        CellObserver cellObserver = new CellObserver(cells, gamePanel);
-        ExecutorService es = Executors.newFixedThreadPool(2);
+        cellObserver = new CellObserver(cells, gamePanel);
         es.execute(cellObserver);
-        gamePanel.setVisible(gamePanel.isGameOn());
+        gamePanel.setVisible(true);
         setVisible(true);
     }
 
@@ -63,13 +58,21 @@ public class MainJFrame extends javax.swing.JFrame {
         toggleGameButton = new javax.swing.JToggleButton();
         jSeparator1 = new javax.swing.JSeparator();
         gamePanel = new field.GameJPanel();
+        restartButton = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
-        toggleGameButton.setText("Start/Stop");
+        toggleGameButton.setText("Start/Pause");
         toggleGameButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 toggleGameButtonActionPerformed(evt);
+            }
+        });
+
+        restartButton.setText("Restart");
+        restartButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                restartButtonActionPerformed(evt);
             }
         });
 
@@ -78,22 +81,25 @@ public class MainJFrame extends javax.swing.JFrame {
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGap(157, 157, 157)
-                .addComponent(toggleGameButton)
-                .addContainerGap(157, Short.MAX_VALUE))
-            .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jSeparator1))
-            .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(gamePanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addContainerGap())
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jSeparator1)
+                    .addGroup(layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(gamePanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(toggleGameButton)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 220, Short.MAX_VALUE)
+                                .addComponent(restartButton)))
+                        .addContainerGap())))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(toggleGameButton)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(toggleGameButton)
+                    .addComponent(restartButton))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -106,8 +112,27 @@ public class MainJFrame extends javax.swing.JFrame {
 
     private void toggleGameButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_toggleGameButtonActionPerformed
         this.gamePanel.toggleGameOn();
-        this.gamePanel.setVisible(!this.gamePanel.isVisible());
     }//GEN-LAST:event_toggleGameButtonActionPerformed
+
+    private void restartButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_restartButtonActionPerformed
+        // TODO add your handling code here:
+        this.cellObserver.setStopped(true);
+        for (Component x : this.gamePanel.getComponents()) {
+            if (x.getClass() == Cell.class) {
+                gamePanel.remove(x);
+            }
+        }
+        repaint();
+        generateCells();
+        this.gamePanel.setVisible(true);
+        Dimension size = this.getSize();
+        this.setMinimumSize(size);
+        pack();
+
+        cellObserver.setStopped(false);
+        es.execute(cellObserver);
+
+    }//GEN-LAST:event_restartButtonActionPerformed
 
     /**
      * @param args the command line arguments
@@ -148,6 +173,23 @@ public class MainJFrame extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private field.GameJPanel gamePanel;
     private javax.swing.JSeparator jSeparator1;
+    private javax.swing.JButton restartButton;
     private javax.swing.JToggleButton toggleGameButton;
     // End of variables declaration//GEN-END:variables
+
+    private void generateCells() {
+        Random random = new Random();
+        // generating cells with randomized states
+        for (int i = 0; i < cells.length; i++) {
+            for (int j = 0; j < cells.length; j++) {
+                boolean isAlive = false;
+                if (random.nextInt() % 10 == 0) {
+                    isAlive = true;
+                }
+                cells[i][j] = new Cell(isAlive, "Cell" + i + "-" + j);
+                cells[i][j].setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY, 1));
+                gamePanel.add(cells[i][j], i, j);
+            }
+        }
+    }
 }
